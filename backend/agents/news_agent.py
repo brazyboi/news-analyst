@@ -1,6 +1,6 @@
 from anthropic.types import ToolUnionParam
 from .base import BaseAgent
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import httpx
 import os
 
@@ -26,13 +26,14 @@ class NewsAgent(BaseAgent):
         if not api_key:
             return "No API key found for NewsAPI (NEWS_API_KEY)"
 
-        from_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+        now_utc = datetime.now(timezone.utc)
+        from_date = (now_utc - timedelta(days=days_back)).strftime("%Y-%m-%d")
 
         params = {
             "apiKey": api_key,
             "q": query,
             "from": from_date,
-            "to": datetime.utcnow().strftime("%Y-%m-%d"),
+            "to": now_utc.strftime("%Y-%m-%d"),
             "sortBy": "relevancy",
             "pageSize": limit
         }
@@ -77,5 +78,4 @@ class NewsAgent(BaseAgent):
                 },
             }
         ]
-
 
