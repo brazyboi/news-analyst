@@ -1,4 +1,3 @@
-# backend/agents/base.py
 from dataclasses import dataclass, field
 from typing import Any, Generator
 from datetime import datetime
