@@ -2,8 +2,7 @@
 
 Terminal-first tech news analysis app built with Typer and Rich.
 
-![CLI demo](docs/demo.gif)
-
+<!-- ![CLI demo](docs/demo.gif) -->
 ### Setup
 
 1. `uv sync`
@@ -16,12 +15,12 @@ Terminal-first tech news analysis app built with Typer and Rich.
 From repo root:
 
 ```bash
-uv run python main.py analyze --topic "AI chips" --companies NVIDIA,AMD,Intel
+uv run news-analyst analyze --topic "AI chips" --companies NVIDIA,AMD,Intel
 ```
 
 ### More examples
 
 ```bash
-uv run python main.py analyze --topic "cloud security" --companies CrowdStrike,Palo Alto Networks,Zscaler
-uv run python main.py analyze --topic "consumer AI devices" --companies Apple,Meta,Amazon --days-back 14
+uv run news-analyst analyze --topic "cloud security" --companies CrowdStrike,Palo Alto Networks,Zscaler
+uv run news-analyst analyze --topic "consumer AI devices" --companies Apple,Meta,Amazon --days-back 14
 ```
