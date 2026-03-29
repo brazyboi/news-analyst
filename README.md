@@ -1,6 +1,6 @@
-## Multi-Agent Tech News Analyst (CLI)
+## News Analyst CLI 
 
-Terminal-first tech news analysis app built with Typer and Rich.
+Built with Python, using Typer and Rich. There are two agents, the news gathering agent and the analyst agent, that are connected by an orchestrator, which feed output to the LLM.
 
 <!-- ![CLI demo](docs/demo.gif) -->
 ### Setup
