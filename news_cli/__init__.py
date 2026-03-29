@@ -1,0 +1,1 @@
+"""News CLI application package."""

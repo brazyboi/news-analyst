@@ -17,7 +17,10 @@ dependencies = [
 ]
 
 [project.scripts]
-news-analyst = "news_analyst.main:app"
+news-analyst = "news_cli.main:app"
 
 [tool.uv]
 package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["news_cli"]
