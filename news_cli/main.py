@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from time import perf_counter
 
 import typer
+from dotenv import find_dotenv, load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -19,9 +21,22 @@ AGENT_COLORS = {
 }
 
 
+def _load_environment() -> None:
+    dotenv_path = find_dotenv(usecwd=True)
+    if dotenv_path:
+        load_dotenv(dotenv_path=dotenv_path, override=False)
+        return
+
+    # Fallback for direct invocation when discovery misses the repo root.
+    repo_root_env = Path(__file__).resolve().parents[1] / ".env"
+    if repo_root_env.exists():
+        load_dotenv(dotenv_path=repo_root_env, override=False)
+
+
 @app.callback()
 def cli() -> None:
     """CLI entry point."""
+    _load_environment()
     return None
 
 
@@ -31,19 +46,19 @@ def _truncate(text: str, max_len: int = 48) -> str:
     return f"{text[: max_len - 3]}..."
 
 
-def _parse_companies(companies: str) -> list[str]:
+def _parse_companies(companies: str | None) -> list[str]:
+    if not companies:
+        return []
     values = [value.strip() for value in companies.split(",")]
-    parsed = [value for value in values if value]
-    if not parsed:
-        raise typer.BadParameter("Provide at least one company name.")
-    return parsed
+    return [value for value in values if value]
 
 
 def _render_header(topic: str, companies: list[str]) -> None:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    companies_text = ", ".join(companies) if companies else "Not specified"
     body = (
         f"[bold]Topic:[/bold] {topic}\n"
-        f"[bold]Companies:[/bold] {', '.join(companies)}\n"
+        f"[bold]Companies:[/bold] {companies_text}\n"
         f"[bold]Started:[/bold] {timestamp}"
     )
     console.print(Panel(body, title="Multi-Agent Tech News Analyst", expand=False))
@@ -122,19 +137,20 @@ def _render_results(final_text: str, companies: list[str]) -> None:
     else:
         console.print("1. No clear trend themes extracted.")
 
-    table = Table(title="Company Comparison")
-    table.add_column("Company", style="bold")
-    table.add_column("Coverage Signal")
+    if companies:
+        table = Table(title="Company Comparison")
+        table.add_column("Company", style="bold")
+        table.add_column("Coverage Signal")
 
-    comparison_lower = comparison_text.lower()
-    for company in companies:
-        if company.lower() in comparison_lower:
-            signal = "Mentioned in model comparison output"
-        else:
-            signal = "No explicit mention found"
-        table.add_row(company, signal)
-    console.print()
-    console.print(table)
+        comparison_lower = comparison_text.lower()
+        for company in companies:
+            if company.lower() in comparison_lower:
+                signal = "Mentioned in model comparison output"
+            else:
+                signal = "No explicit mention found"
+            table.add_row(company, signal)
+        console.print()
+        console.print(table)
 
     summary_body = summary_text.strip() or final_text.strip() or "No summary generated."
     console.print()
@@ -144,8 +160,8 @@ def _render_results(final_text: str, companies: list[str]) -> None:
 @app.command()
 def analyze(
     topic: str = typer.Option(..., "--topic", help="Research theme, e.g. 'AI chips'."),
-    companies: str = typer.Option(
-        ..., "--companies", help="Comma-separated company names, e.g. NVIDIA,AMD,Intel."
+    companies: str | None = typer.Option(
+        None, "--companies", help="Optional comma-separated company names, e.g. NVIDIA,AMD,Intel."
     ),
     days_back: int = typer.Option(7, "--days-back", min=1, help="Days back for news search."),
 ) -> None:

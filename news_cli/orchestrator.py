@@ -1,3 +1,4 @@
+import os
 from typing import Generator
 
 import anthropic
@@ -16,14 +17,20 @@ def orchestrate_news_analysis(
     """
     Run the in-process news-analysis pipeline and stream status dictionaries.
     """
-    memory = SharedMemory()
-    client = anthropic.Anthropic()
-
-    news_agent = NewsAgent(client=client, memory=memory)
-    analyst_agent = AnalystAgent(client=client, memory=memory)
     total_iterations = 0
 
     try:
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            raise RuntimeError(
+                "Missing ANTHROPIC_API_KEY. Set it in your environment or in the repo .env file."
+            )
+
+        memory = SharedMemory()
+        client = anthropic.Anthropic()
+
+        news_agent = NewsAgent(client=client, memory=memory)
+        analyst_agent = AnalystAgent(client=client, memory=memory)
+
         yield {
             "stage": "news_agent",
             "status": "started",
@@ -40,6 +47,8 @@ def orchestrate_news_analysis(
 
         memory.store("articles", news_results, written_by=news_agent.name)
         article_count = news_results.count("\n[") + 1 if news_results.startswith("[1]") else 0
+        news_error_prefixes = ("No API key found", "There was an error during search:")
+        news_status = "error" if news_results.startswith(news_error_prefixes) else "ok"
         yield {
             "stage": "news_agent",
             "status": "step",
@@ -47,7 +56,7 @@ def orchestrate_news_analysis(
             "iteration": 1,
             "action": "search_news",
             "input": {"query": query, "days_back": days_back, "limit": limit},
-            "result_status": "ok",
+            "result_status": news_status,
             "article_count": article_count,
             "observation": news_results[:300],
         }
@@ -60,12 +69,11 @@ def orchestrate_news_analysis(
 
         yield {"stage": "analyst_agent", "status": "started", "agent": analyst_agent.name}
 
-        run_iter = analyst_agent.run(
-            task=(
-                f"Analyze latest coverage for query: {query}. "
-                f"Focus on these companies: {', '.join(companies or [])}."
-            ),
-        )
+        task = f"Analyze latest coverage for query: {query}."
+        if companies:
+            task += f" Focus on these companies: {', '.join(companies)}."
+
+        run_iter = analyst_agent.run(task=task)
         while True:
             try:
                 step = next(run_iter)

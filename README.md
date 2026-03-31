@@ -16,6 +16,7 @@ From repo root:
 
 ```bash
 uv run news-analyst analyze --topic "AI chips" --companies NVIDIA,AMD,Intel
+uv run news-analyst analyze --topic "AI chips"
 ```
 
 ### More examples
